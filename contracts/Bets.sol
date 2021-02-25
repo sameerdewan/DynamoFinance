@@ -20,7 +20,10 @@ contract Bets {
             Events.fireEvent_BetCreated(now + timeUntilExecute, now + timeToParticipate, ticker, id, msg.value);
         }
     }
-    function participateInBet(string calldata ticker, bytes32 id) public payable {
-        BetsData.persistParticipationData(ticker, id, msg.value);
+    function participateInBet(string calldata ticker, bytes32 id) public payable returns(bool success) {
+        success = BetsData.persistParticipationData(ticker, id, msg.value);
+        if (success == true) {
+            Events.fireEvent_BetParticipation(ticker, id, msg.value);
+        }
     }
 }
