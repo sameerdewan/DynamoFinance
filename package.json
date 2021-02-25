@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "truffle test",
+    "lint": "eslint . --config node_modules/eslint-config-airbnb-base/index.js --fix",
     "ganache": "./bash/ganache.sh"
   },
   "author": "Sameer Dewan",
