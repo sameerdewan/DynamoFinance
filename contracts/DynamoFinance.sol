@@ -36,4 +36,10 @@ contract DynamoFinance {
     function safeCallFn() external view returns(bool) {
         return operational == true && contracts[msg.sender] == true;
     }
+    function isValidContract(address _address) external view returns(bool) {
+        return contracts[_address] == true;
+    }
+    function isAllowed(address _address) external view returns(bool) {
+        return allowed[_address] == true;
+    }
 }
