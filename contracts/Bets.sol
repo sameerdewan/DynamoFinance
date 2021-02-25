@@ -26,4 +26,10 @@ contract Bets {
             Events.fireEvent_BetParticipation(ticker, id, msg.value);
         }
     }
+    function cancelBet(string calldata ticker, bytes32 id) public returns(bool success) {
+        success = BetsData.persistBetCancelation(ticker, id, msg.sender);
+        if (success == true) {
+            Events.fireEvent_BetCancelled(ticker, id);
+        }
+    }
 }

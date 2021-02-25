@@ -6,4 +6,5 @@ interface EventsInterface {
     function fireEvent_ContractPermissions(address _address, bool allowed) external;
     function fireEvent_BetCreated(uint256 dateOfExecution, uint256 timeToParticipate, string calldata ticker, bytes32 id, uint value) external;
     function fireEvent_BetParticipation(string calldata ticker, bytes32 id, uint value) external;
+    function fireEvent_BetCancelled(string calldata ticker, bytes32 id) external;
 }
