@@ -7,7 +7,7 @@ contract EventsContract {
     DynamoFinanceInterface DynamoFinance;
     event event_ContractToggle(bool operational);
     event event_ContractPermissions(address _address, bool allowed);
-    event event_BetCreated(uint256 dateOfExecution, string ticker, bytes32 id, uint value);
+    event event_BetCreated(uint256 dateOfExecution, uint256 timeToParticipate, string ticker, bytes32 id, uint value);
     event event_BetParticipation(string ticker, bytes32 id, uint value);
     constructor(address dynamoFinance) public {
         DynamoFinance = DynamoFinanceInterface(dynamoFinance);
@@ -22,8 +22,8 @@ contract EventsContract {
     function fireEvent_ContractPermissions(address _address, bool allowed) external isSafe() {
         emit event_ContractPermissions(_address, allowed);
     }
-    function fireEvent_BetCreated(uint256 dateOfExecution, string calldata ticker, bytes32 id, uint value) external isSafe() {
-        emit event_BetCreated(dateOfExecution, ticker, id, value);
+    function fireEvent_BetCreated(uint256 dateOfExecution, uint256 timeToParticipate, string calldata ticker, bytes32 id, uint value) external isSafe() {
+        emit event_BetCreated(dateOfExecution, timeToParticipate, ticker, id, value);
     }
     function fireEvent_BetParticipation(string calldata ticker, bytes32 id, uint value) external isSafe() {
         emit event_BetParticipation(ticker, id, value);

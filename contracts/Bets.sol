@@ -14,10 +14,10 @@ contract Bets {
         BetsData = BetsDataInterface(betsData);
         Events = EventsInterface(DynamoFinance.getEventsAddress());
     }
-    function createBet(uint256 timeUntilExecute, uint256 timeToParticipate, string calldata ticker, bytes32 id) public payable {
-        bool success = BetsData.persistBetData(now + timeUntilExecute, now + timeToParticipate, ticker, id, msg.value);
+    function createBet(uint256 timeUntilExecute, uint256 timeToParticipate, string calldata ticker, bytes32 id) public payable returns(bool success) {
+        success = BetsData.persistBetData(now + timeUntilExecute, now + timeToParticipate, ticker, id, msg.value);
         if (success == true) {
-
+            Events.fireEvent_BetCreated(now + timeUntilExecute, now + timeToParticipate, ticker, id, msg.value);
         }
     }
     function participateInBet(string calldata ticker, bytes32 id) public payable {
