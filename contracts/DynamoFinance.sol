@@ -24,21 +24,27 @@ contract DynamoFinance {
     }
     function addAllowed(address _address) external onlyAllowed() {
         allowed[_address] = true;
+        Events.fireEvent_ContractPermissions(_address, true);
     }
     function removeAllowed(address _address) external onlyAllowed() {
         allowed[_address] = false;
+        Events.fireEvent_ContractPermissions(_address, false);
     }
     function enable() external onlyAllowed() {
         operational = true;
+        Events.fireEvent_ContractToggle(true);
     }
     function disable() external onlyAllowed() {
         operational = false;
+        Events.fireEvent_ContractToggle(false);
     }
     function addContract(address _address) external onlyAllowed() {
         contracts[_address] = true;
+        Events.fireEvent_ContractPermissions(_address, true);
     }
     function removeContract(address _address) external onlyAllowed() {
         contracts[_address] = false;
+        Events.fireEvent_ContractPermissions(_address, false);
     }
     function safeCallFn(address _address) external view returns(bool) {
         return operational == true && contracts[_address] == true;
