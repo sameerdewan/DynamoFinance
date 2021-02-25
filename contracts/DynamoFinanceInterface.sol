@@ -2,5 +2,5 @@
 pragma solidity >=0.4.21 <0.7.0;
 
 interface DynamoFinanceInterface {
-    function safeCallFn() external view returns(bool);
+    function safeCallFn(address _address) external view returns(bool);
 }
