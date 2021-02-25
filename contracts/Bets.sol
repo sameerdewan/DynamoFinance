@@ -5,4 +5,7 @@ import "./DynamoFinanceInterface.sol";
 
 contract Bets {
     DynamoFinanceInterface DynamoFinance;
+    constructor(address dynamoFinance) public {
+        DynamoFinance = DynamoFinanceInterface(dynamoFinance);
+    }
 }
