@@ -55,4 +55,7 @@ contract DynamoFinance {
     function isAllowed(address _address) external view returns(bool) {
         return allowed[_address] == true;
     }
+    function getEventsAddress() external view returns(address) {
+        return eventsAddress;
+    }
 }
