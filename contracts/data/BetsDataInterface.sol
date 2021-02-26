@@ -6,5 +6,6 @@ interface BetsDataInterface {
     function persistParticipationData(string calldata ticker, bytes32 id, uint value) external returns(bool);
     function persistBetCancelation(string calldata ticker, bytes32 id, address _address) external returns(bool);
     function getBet(string calldata ticker, bytes32 id) external returns(bool, bool, address payable, uint);
+    function fulfill(bytes32 requestId, uint256 price) external;
     function payoutBet(string calldata ticker, bytes32 id) external;
 }
