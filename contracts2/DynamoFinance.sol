@@ -3,6 +3,7 @@ pragma solidity >=0.4.21 <0.7.0;
 
 import './base/DynamoContract.sol';
 import './TiingoChainlink.sol';
+import './Bets.sol';
 
 contract DynamoFinance is DynamoContract {
 
@@ -23,7 +24,8 @@ contract DynamoFinance is DynamoContract {
 
         }
         if (newBets == true) {
-
+            contract_bets = address(new BetsContract(contract_main));
+            allowed[contract_bets] = true;
         }
         if (newOracle == true) {
             contract_oracle = address(new TiingoChainlinkContract(contract_main));
