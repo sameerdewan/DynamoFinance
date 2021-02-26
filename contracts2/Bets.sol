@@ -16,6 +16,7 @@ contract BetsContract is DynamoContract {
         uint256 untilParticipation;
         uint256 bets;
         uint256 poolValue;
+        uint256 index;
         bool exists;
         bool payedOut;
         string field;
@@ -33,6 +34,7 @@ contract BetsContract is DynamoContract {
     uint256 numberOfBetContracts = 0;
     mapping(bytes32 => Bet[]) public dynamoBetsMap;
     mapping(bytes32 => Bet) public dynamoBetMap;
+    mapping(address => Bet[]) public myBets;
 
     constructor(address contract_main) public {
         DynamoFinance = DynamoFinanceInterface(contract_main);
@@ -59,11 +61,13 @@ contract BetsContract is DynamoContract {
         uint256 msToSecondsToParticipate = millisecondsToParticipate * 1000;
         uint256 untilParticipation = now + msToSecondsToParticipate;
         requestId = TiingoChainlink.request(field, ticker, until);
+        numberOfBetContracts += 1;
         BetContract memory DynamoBetContract = BetContract({
             requestId: requestId,
             value: msg.value,
             until: until,
             untilParticipation: untilParticipation,
+            index: numberOfBetContracts,
             bets: 1,
             poolValue: msg.value,
             exists: true,
@@ -73,7 +77,6 @@ contract BetsContract is DynamoContract {
             creator: msg.sender
         });
         dynamoBetContractMap[requestId] = DynamoBetContract;
-        numberOfBetContracts += 1;
         dynamoBetContractArray.push(DynamoBetContract);
         betId = keccak256(abi.encodePacked(requestId, prediction, msg.sender));
         Bet memory DynamoBet = Bet({
@@ -84,6 +87,7 @@ contract BetsContract is DynamoContract {
         });
         dynamoBetsMap[requestId].push(DynamoBet);
         dynamoBetMap[betId] = DynamoBet;
+        myBets[msg.sender].push(DynamoBet);
     }
 
     function participateInBet(bytes32 requestId, uint256 prediction) external payable returns(bytes32 betId) {
@@ -100,7 +104,18 @@ contract BetsContract is DynamoContract {
         });
         dynamoBetContractMap[requestId].bets += 1;
         dynamoBetContractMap[requestId].poolValue += msg.value;
+        dynamoBetContractArray[dynamoBetContractMap[requestId].index].bets += 1;
+        dynamoBetContractArray[dynamoBetContractMap[requestId].index].poolValue += msg.value;
         dynamoBetsMap[requestId].push(DynamoBet);
         dynamoBetMap[betId] = DynamoBet;
+        myBets[msg.sender].push(DynamoBet);
+    }
+
+    function cancelBet(bytes32 requestId) external {
+        require(msg.sender == dynamoBetContractMap[requestId].creator, 'ERROR: Bets@cancelBet::notCreator');
+        require(dynamoBetContractMap[requestId].bets == 1, 'ERROR: Bets@cancelBet::bets>1');
+        dynamoBetContractMap[requestId].exists = false;
+        dynamoBetContractArray[dynamoBetContractMap[requestId].index].exists = false;
+        TiingoChainlink.cancelRequest(requestId);
     }
 }
