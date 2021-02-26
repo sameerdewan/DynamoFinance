@@ -27,7 +27,7 @@ contract BetsContract is DynamoContract {
         bytes32 requestId;
         bytes32 betId;
         uint256 prediction;
-        address predictor;
+        address payable predictor;
     }
     mapping(bytes32 => BetContract) public dynamoBetContractMap;
     BetContract[] public dynamoBetContractArray;
@@ -42,7 +42,7 @@ contract BetsContract is DynamoContract {
 
     function setContract(string calldata contractKey, address _address) external returns(bool success) {
         success = false;
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         if (compare(contractKey, main) == true) {
             DynamoFinance = DynamoFinanceInterface(_address);
             success = true;
@@ -117,5 +117,31 @@ contract BetsContract is DynamoContract {
         dynamoBetContractMap[requestId].exists = false;
         dynamoBetContractArray[dynamoBetContractMap[requestId].index].exists = false;
         TiingoChainlink.cancelRequest(requestId);
+    }
+
+    function getWinningPrediction(bytes32 requestId, uint256 price) private returns (address payable currentLeader){
+        currentLeader = 0x0;
+        uint256 currentLowest = 0;
+        for (i = 0; i < dynamoBetContractMap[requestId].bets; i++) {
+            Bet currentBet = dynamoBetMap[requestId][i];
+            if (i == 0) {
+                currentLeader = currentBet.predictor;
+                currentLowest = price - currentBet.prediction;
+            } else {
+                if ((price - currentBet.predition) < currentLowest) {
+                    currentLeader = currentBet.predictor;
+                    currentLowest = price - currentBet.prediction;
+                }
+            }
+        }
+    }
+
+    function payout(bytes32 requestId, uint256 price) external {
+        DynamoFinance.safeCallFn(msg.sender);
+        require(msg.sender == DynamoFinance.getContract(oracle), 'ERROR: Bets@payout()::notOracle');
+        require(dynamoBetContractMap[requestId].payedOut == false, 'ERROR: Bets@payout()::payedOut');
+        address winner = this.getWinningPrediction(requestId, price);
+        dynamoBetContractMap[requestId].payedOut = true;
+        winner.transfer(dynamoBetContractMap[requestId].poolValue);
     }
 }

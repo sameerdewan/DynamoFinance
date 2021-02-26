@@ -4,9 +4,11 @@ pragma solidity >=0.4.21 <0.7.0;
 import '../node_modules/@chainlink/contracts/src/v0.6/ChainlinkClient.sol';
 import './base/DynamoContract.sol';
 import './interfaces/DynamoFinance.int.sol';
+import './interfaces/Bets.int.sol';
 
 contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
     DynamoFinanceInterface DynamoFinance;
+    BetsInterface Bets;
 
     uint256 public oraclePayment = 1;
     struct Fulfillment {
@@ -28,13 +30,13 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
 
     function setContract(string calldata contractKey, address _address) external returns(bool success) {
         success = false;
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         if (compare(contractKey, main) == true) {
             DynamoFinance = DynamoFinanceInterface(_address);
             success = true;
         }
         else if (compare(contractKey, bets) == true) {
-
+            Bets = BetsInterface(_address);
         }
         else if (compare(contractKey, events) == true) {
 
@@ -43,7 +45,7 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
 
     function setOracleData(string calldata field, address _address) external returns(bool success) {
         success = false;
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         if (compare(field, 'oracleServiceProvider') == true) {
             oracleServiceProvider = _address;
             success = true;
@@ -53,7 +55,7 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
 
     function setOracleData(string calldata field, bytes32 provider) external returns(bool success) {
         success = false;
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         if (compare(field, 'oracleJobId') == true) {
             oracleJobId = provider;
             success = true;
@@ -63,7 +65,7 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
 
     function setOracleData(string calldata field, uint256 payment) external returns(bool success) {
         success = false;
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         if (compare(field, 'oraclePayment') == true) {
             oraclePayment = payment;
             success = true;
@@ -72,7 +74,8 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
     }
     
     function request(string calldata field, string calldata ticker, uint256 until) external returns(bytes32 requestId) {
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
+        require(DynamoFinance.getContract(bets) == msg.sender, 'ERROR: TiingoChainlink@request::notBets');
         Chainlink.Request memory req = buildChainlinkRequest(oracleJobId, address(this), this.fulfill.selector);
         req.addUint('until', until);
         req.add('field', field);
@@ -90,7 +93,7 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
     }
 
     function cancelRequest(bytes32 requestId) external {
-        DynamoFinance.safeCallFn(address(this));
+        DynamoFinance.safeCallFn(msg.sender);
         cancelChainlinkRequest(requestId, oraclePayment, this.fulfill.selector, now);
     }
 
@@ -106,13 +109,8 @@ contract TiingoChainlinkContract is ChainlinkClient, DynamoContract {
 
     function fulfill(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
         require(fulfillments[_requestId].exists == true && fulfillments[_requestId].fulfilled == false, 'ERROR: TiingoChainlink@fulfill');
-        fulfillments[_requestId] = Fulfillment({
-            exists: true,
-            fulfilled: true,
-            price: _price,
-            field: fulfillments[_requestId].field,
-            ticker: fulfillments[_requestId].ticker,
-            until: fulfillments[_requestId].until
-        });
+        fulfillments[_requestId].fulfilled = true;
+        fulfillments[_requestId].price = _price;
+        Bets.payout(_requestId, _price);
     }
 }
