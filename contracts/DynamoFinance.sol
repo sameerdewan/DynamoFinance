@@ -1,61 +1,95 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.21 <0.7.0;
 
-import "./events/Events.sol";
-import "./events/EventsInterface.sol";
+import './base/DynamoContract.sol';
+import './TiingoChainlink.sol';
+import './Bets.sol';
 
-contract DynamoFinance {
-    EventsInterface Events;
+contract DynamoFinance is DynamoContract {
+
     address public owner;
-    address public appAddress;
-    address public eventsAddress;
+    address public contract_main;
+    address public contract_events;
+    address public contract_bets;
+    address public contract_oracle;
+
+    mapping(address => bool) allowed;
+
     bool public operational = false;
-    mapping(address => bool) public contracts;
-    mapping (address => bool) public allowed;
-    constructor() public {
+
+    constructor(bool newEvents, bool newBets, bool newOracle) public {
         owner = msg.sender;
-        appAddress = address(this);
-        eventsAddress = address(new EventsContract(appAddress));
-        Events = EventsInterface(eventsAddress);
+        contract_main = address(this);
+        if (newEvents == true) {
+
+        }
+        if (newBets == true) {
+            contract_bets = address(new BetsContract(contract_main));
+            allowed[contract_bets] = true;
+        }
+        if (newOracle == true) {
+            contract_oracle = address(new TiingoChainlinkContract(contract_main));
+            allowed[contract_oracle] = true;
+        }
     }
+
     modifier onlyAllowed() {
-        require(allowed[msg.sender] == true || msg.sender == owner, 'ERROR: AUTH');
+        require(msg.sender == owner || allowed[msg.sender] == true, 'ERROR: DynamoFinance@onlyAllowed()');
         _;
     }
-    function addAllowed(address _address) external onlyAllowed() {
-        allowed[_address] = true;
-        Events.fireEvent_ContractPermissions(_address, true);
+
+    function setContract(string calldata contractKey, address _address) external onlyAllowed() returns(bool success) {
+        success = false;
+        if (compare(contractKey, events) == true) {
+            allowed[contract_events] = false;
+            contract_events = _address;
+            success = true;
+        }
+        else if (compare(contractKey, bets) == true) {
+            allowed[contract_events] = false;
+            contract_bets = _address;
+            success = true;
+        }
+        else if (compare(contractKey, oracle) == true) {
+            allowed[contract_events] = false;
+            contract_oracle = _address;
+            success = true;
+        }
+        if (success == true) {
+            allowed[_address] = true;
+        }
     }
-    function removeAllowed(address _address) external onlyAllowed() {
-        allowed[_address] = false;
-        Events.fireEvent_ContractPermissions(_address, false);
+
+    function setPermissions(address _address, bool permission) external onlyAllowed() {
+        allowed[_address] = permission;
     }
-    function enable() external onlyAllowed() {
-        operational = true;
-        Events.fireEvent_ContractToggle(true);
+
+    function setOperational(bool state) external onlyAllowed() {
+        operational = state;
     }
-    function disable() external onlyAllowed() {
-        operational = false;
-        Events.fireEvent_ContractToggle(false);
+
+    function getContract(string calldata contractKey) external view returns(address _address) {
+        bool success = false;
+        if (compare(contractKey, main) == true) {
+            _address = contract_main;
+            success = true;
+        }
+        else if (compare(contractKey, events) == true) {
+            _address = contract_events;
+            success = true;
+        }
+        else if (compare(contractKey, bets) == true) {
+            _address = contract_bets;
+            success = true;
+        }
+        else if (compare(contractKey, oracle) == true) {
+            _address = contract_oracle;
+            success = true;
+        }
+        require(success == true, 'ERROR: DynamoFinance@getContract()');
     }
-    function addContract(address _address) external onlyAllowed() {
-        contracts[_address] = true;
-        Events.fireEvent_ContractPermissions(_address, true);
-    }
-    function removeContract(address _address) external onlyAllowed() {
-        contracts[_address] = false;
-        Events.fireEvent_ContractPermissions(_address, false);
-    }
-    function safeCallFn(address _address) external view returns(bool) {
-        return operational == true && contracts[_address] == true;
-    }
-    function isValidContract(address _address) external view returns(bool) {
-        return contracts[_address] == true;
-    }
-    function isAllowed(address _address) external view returns(bool) {
-        return allowed[_address] == true;
-    }
-    function getEventsAddress() external view returns(address) {
-        return eventsAddress;
+
+    function safeCallFn(address _address) external view {
+        require(operational == true && allowed[_address] == true, 'ERROR: DynamoFinance@safeCallFn');
     }
 }
